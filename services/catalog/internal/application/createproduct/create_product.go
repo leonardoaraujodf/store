@@ -9,7 +9,7 @@ import (
 
 type Command struct {
 	ID, Name, Description string
-	PriceMinorUnits       int
+	PriceMinorUnits       int64
 	Currency              string
 }
 

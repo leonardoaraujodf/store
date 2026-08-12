@@ -389,13 +389,13 @@ func TestUseCaseExecuteReturnsRepositoryError(t *testing.T) {
 }
 ```
 
-- [ ] **Step 4: Run the repository-error test, then make the smallest repair if needed**
+- [X] **Step 4: Run the repository-error test, then make the smallest repair if needed**
 
 Run: `go test ./services/catalog/internal/application/createproduct -run '^TestUseCaseExecuteReturnsRepositoryError$'`
 
 Expected: PASS if `Execute` returns the `Save` error. Otherwise, return that error directly from `Execute` and rerun the test.
 
-- [ ] **Step 5: Run all quality checks and commit**
+- [X] **Step 5: Run all quality checks and commit**
 
 Run: `gofmt -w services/catalog/internal/application/createproduct/*.go && go vet ./... && go test ./... && git add services/catalog/internal/application/createproduct && git commit -m "test(catalog): cover create product failures"`
 

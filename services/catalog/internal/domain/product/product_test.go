@@ -32,7 +32,7 @@ func TestNewRejectsInvalidAttributes(t *testing.T) {
 		id          string
 		name        string
 		description string
-		price       int
+		price       int64
 		currency    string
 		want        error
 	}{
