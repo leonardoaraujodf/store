@@ -76,7 +76,7 @@ Run: `go test ./services/catalog/internal/domain/product`
 
 Expected: failure because the package or `product.New` does not exist.
 
-- [ ] **Step 3: Write the minimal implementation**
+- [X] **Step 3: Write the minimal implementation**
 
 ```go
 package product
@@ -100,13 +100,13 @@ func New(id, name, description string, priceMinorUnits int64, currency string) (
 }
 ```
 
-- [ ] **Step 4: Run the focused test and format the new files**
+- [X] **Step 4: Run the focused test and format the new files**
 
 Run: `gofmt -w services/catalog/internal/domain/product/*.go && go test ./services/catalog/internal/domain/product`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit the completed TDD slice**
+- [X] **Step 5: Commit the completed TDD slice**
 
 Run: `git add services/catalog/internal/domain/product && git commit -m "feat(catalog): add product value"`
 
