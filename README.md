@@ -4,7 +4,23 @@ A learning-by-doing backend for an Amazon-like online store. The project uses Go
 
 ## Current State
 
-The project is in **Milestone 1: Foundation**. The first planned feature is a transport-free Catalog service skeleton with a TDD-tested start/stop lifecycle. No application code or infrastructure configuration has been added yet.
+The project is in **Milestone 1: Foundation**. Catalog has a transport-free product domain and `CreateProduct` application use case, both covered by focused unit tests. PostgreSQL, gRPC, and other infrastructure are not yet introduced.
+
+## Local quality checks
+
+Go **1.26.5** is required. Run the complete local quality contract with:
+
+```bash
+make check
+```
+
+Individual commands are also available:
+
+```bash
+make fmt-check
+make vet
+make test
+```
 
 ## Project Guides
 
@@ -34,4 +50,3 @@ Read these documents in order before starting work:
 5. Cart and Order workflows.
 6. Payment and reliability.
 7. Kubernetes deployment.
-
