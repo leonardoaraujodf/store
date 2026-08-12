@@ -11,11 +11,11 @@ type Product struct {
 	ID              string
 	Name            string
 	Description     string
-	PriceMinorUnits int
+	PriceMinorUnits int64
 	Currency        string
 }
 
-func New(id string, name string, description string, priceMinorUnits int, currency string) (Product, error) {
+func New(id string, name string, description string, priceMinorUnits int64, currency string) (Product, error) {
 	if id == "" {
 		return Product{}, ErrEmptyID
 	}
@@ -26,12 +26,12 @@ func New(id string, name string, description string, priceMinorUnits int, curren
 		return Product{}, ErrNegativePrice
 	}
 
-	if len(currency) < 3 {
+	if len(currency) != 3 {
 		return Product{}, ErrInvalidCurrency
 	}
 
 	for _, c := range currency {
-		if c <= 'A' || c >= 'Z' {
+		if c < 'A' || c > 'Z' {
 			return Product{}, ErrInvalidCurrency
 		}
 	}

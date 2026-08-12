@@ -137,13 +137,13 @@ func TestNewRejectsEmptyID(t *testing.T) {
 
 Add `"errors"` to the test imports.
 
-- [ ] **Step 2: Run the test and verify the expected failure**
+- [X] **Step 2: Run the test and verify the expected failure**
 
 Run: `go test ./services/catalog/internal/domain/product -run '^TestNewRejectsEmptyID$'`
 
 Expected: compilation failure because `product.ErrEmptyID` does not exist, or a test failure because an empty ID is accepted.
 
-- [ ] **Step 3: Implement only the empty-ID rule**
+- [X] **Step 3: Implement only the empty-ID rule**
 
 ```go
 var ErrEmptyID = errors.New("product ID must not be empty")
@@ -164,7 +164,7 @@ func New(id, name, description string, priceMinorUnits int64, currency string) (
 
 Add `"errors"` to the production imports.
 
-- [ ] **Step 4: Repeat the same red-green cycle for the remaining three rules**
+- [X] **Step 4: Repeat the same red-green cycle for the remaining three rules**
 
 After the empty-ID cycle is green, add this complete test and introduce each row one at a time. Each newly introduced row must fail before adding its corresponding sentinel error and validation branch.
 
@@ -199,7 +199,7 @@ func TestNewRejectsInvalidAttributes(t *testing.T) {
 
 For `ErrInvalidCurrency`, accept exactly three ASCII uppercase letters (`A` through `Z`). Keep zero as a valid price; Issue #1 rejects negative prices, not free products.
 
-- [ ] **Step 5: Run the complete domain package and commit**
+- [X] **Step 5: Run the complete domain package and commit**
 
 Run: `gofmt -w services/catalog/internal/domain/product/*.go && go test ./services/catalog/internal/domain/product && git add services/catalog/internal/domain/product && git commit -m "feat(catalog): validate product attributes"`
 
@@ -217,7 +217,7 @@ Expected: all domain tests PASS.
 - Produces: `type ProductRepository interface { Save(context.Context, product.Product) error }`.
 - Produces: `type Command` and `func (UseCase) Execute(context.Context, Command) (product.Product, error)`.
 
-- [ ] **Step 1: Write the failing application test with a test-only fake**
+- [X] **Step 1: Write the failing application test with a test-only fake**
 
 ```go
 package createproduct_test
@@ -262,13 +262,13 @@ func TestUseCaseExecuteSavesValidProduct(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Run the test and verify the expected failure**
+- [X] **Step 2: Run the test and verify the expected failure**
 
 Run: `go test ./services/catalog/internal/application/createproduct -run '^TestUseCaseExecuteSavesValidProduct$'`
 
 Expected: failure because the application packages and use case do not exist.
 
-- [ ] **Step 3: Implement the port and minimal use case**
+- [X] **Step 3: Implement the port and minimal use case**
 
 ```go
 // application/port/product_repository.go
@@ -314,13 +314,13 @@ func (u UseCase) Execute(ctx context.Context, command Command) (product.Product,
 }
 ```
 
-- [ ] **Step 4: Format and run the focused test**
+- [X] **Step 4: Format and run the focused test**
 
 Run: `gofmt -w services/catalog/internal/application/{port,createproduct}/*.go && go test ./services/catalog/internal/application/createproduct -run '^TestUseCaseExecuteSavesValidProduct$'`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit the port and successful application flow**
+- [X] **Step 5: Commit the port and successful application flow**
 
 Run: `git add services/catalog/internal/application && git commit -m "feat(catalog): save products through repository port"`
 
@@ -389,13 +389,13 @@ func TestUseCaseExecuteReturnsRepositoryError(t *testing.T) {
 }
 ```
 
-- [ ] **Step 4: Run the repository-error test, then make the smallest repair if needed**
+- [X] **Step 4: Run the repository-error test, then make the smallest repair if needed**
 
 Run: `go test ./services/catalog/internal/application/createproduct -run '^TestUseCaseExecuteReturnsRepositoryError$'`
 
 Expected: PASS if `Execute` returns the `Save` error. Otherwise, return that error directly from `Execute` and rerun the test.
 
-- [ ] **Step 5: Run all quality checks and commit**
+- [X] **Step 5: Run all quality checks and commit**
 
 Run: `gofmt -w services/catalog/internal/application/createproduct/*.go && go vet ./... && go test ./... && git add services/catalog/internal/application/createproduct && git commit -m "test(catalog): cover create product failures"`
 
