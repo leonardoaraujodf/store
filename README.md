@@ -4,7 +4,7 @@ A learning-by-doing backend for an Amazon-like online store. The project uses Go
 
 ## Current State
 
-The project is in **Milestone 1: Foundation**. Catalog has a transport-free product domain and `CreateProduct` application use case, both covered by focused unit tests. PostgreSQL, gRPC, and other infrastructure are not yet introduced.
+The project is in **Milestone 1: Foundation**. Catalog has a transport-free product domain and `CreateProduct` application use case, both covered by focused unit tests. Its PostgreSQL repository adapter is covered by a Compose-backed integration test. gRPC and other infrastructure are not yet introduced.
 
 ## Local quality checks
 
@@ -20,6 +20,35 @@ Individual commands are also available:
 make fmt-check
 make vet
 make test
+```
+
+## Local Catalog database
+
+Docker and Docker Compose are required for the PostgreSQL integration workflow. The commands below use a local PostgreSQL database named `catalog` and versioned Catalog migrations.
+
+```bash
+# Start PostgreSQL and wait until it is healthy.
+make db-up
+
+# Apply pending Catalog migrations, then exit.
+make migrate-up
+
+# Run the PostgreSQL repository integration test.
+make test-integration
+```
+
+`make test-integration` starts PostgreSQL, applies pending migrations, and runs the tagged integration test. `make check` remains database-free and does not start Docker or run integration tests.
+
+To stop containers while retaining local database data, run:
+
+```bash
+make db-down
+```
+
+To remove local database data, recreate PostgreSQL, and reapply migrations, run:
+
+```bash
+make db-reset
 ```
 
 ## Project Guides
