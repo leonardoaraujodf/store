@@ -36,13 +36,13 @@
 - Create: `services/catalog/migrations/000001_create_products.down.sql`
 - Modify: `Makefile`
 
-- [ ] **Step 1: Confirm Docker and Compose are available**
+- [X] **Step 1: Confirm Docker and Compose are available**
 
 Run: `docker version && docker compose version`
 
 Expected: both commands exit 0. Do not continue until the Docker daemon is running.
 
-- [ ] **Step 2: Add the first migration pair**
+- [X] **Step 2: Add the first migration pair**
 
 `000001_create_products.up.sql`:
 
@@ -62,7 +62,7 @@ CREATE TABLE products (
 DROP TABLE products;
 ```
 
-- [ ] **Step 3: Add Compose services**
+- [X] **Step 3: Add Compose services**
 
 Create `postgres` with `postgres:17-alpine`, database/user/password `catalog`, exposed port `5432`, named volume `catalog-postgres-data`, and a `pg_isready -U catalog -d catalog` health check. Create a `migrate` service using `migrate/migrate:v4.18.3`, mounting `./services/catalog/migrations:/migrations:ro`, depending on healthy `postgres`, and running:
 
@@ -70,7 +70,7 @@ Create `postgres` with `postgres:17-alpine`, database/user/password `catalog`, e
 -path=/migrations -database=postgres://catalog:catalog@postgres:5432/catalog?sslmode=disable up
 ```
 
-- [ ] **Step 4: Add lifecycle commands**
+- [X] **Step 4: Add lifecycle commands**
 
 Append these targets to `.PHONY` and implement them:
 
@@ -90,13 +90,13 @@ db-reset:
 	$(MAKE) migrate-up
 ```
 
-- [ ] **Step 5: Verify database and migration lifecycle**
+- [X] **Step 5: Verify database and migration lifecycle**
 
 Run: `make db-reset && docker compose exec -T postgres psql -U catalog -d catalog -c '\\d products'`
 
 Expected: PostgreSQL is healthy and the table has exactly the five planned columns.
 
-- [ ] **Step 6: Commit schema and local database workflow**
+- [X] **Step 6: Commit schema and local database workflow**
 
 Run: `git add compose.yaml Makefile services/catalog/migrations && git commit -m "build: add Catalog PostgreSQL migrations"`
 
@@ -110,13 +110,13 @@ Run: `git add compose.yaml Makefile services/catalog/migrations && git commit -m
 - Implements: `port.ProductRepository` with `Save(context.Context, product.Product) error`.
 - Produces: `func NewProductRepository(pool *pgxpool.Pool) ProductRepository`.
 
-- [ ] **Step 1: Add the pgx dependency**
+- [X] **Step 1: Add the pgx dependency**
 
 Run: `go get github.com/jackc/pgx/v5/pgxpool && go mod tidy`
 
 Expected: `go.mod` and `go.sum` record the exact resolved versions.
 
-- [ ] **Step 2: Write the failing integration test**
+- [X] **Step 2: Write the failing integration test**
 
 Create a build-tagged test file (`//go:build integration`) that opens `CATALOG_DATABASE_URL`, constructs the adapter, saves a `product.New(...)` result, then queries `products` directly and compares `id`, `name`, `description`, `price_minor_units`, and `currency`.
 
@@ -124,7 +124,7 @@ Run: `CATALOG_DATABASE_URL='postgres://catalog:catalog@localhost:5432/catalog?ss
 
 Expected: compile failure because the adapter does not exist.
 
-- [ ] **Step 3: Implement the smallest adapter**
+- [X] **Step 3: Implement the smallest adapter**
 
 ```go
 type ProductRepository struct{ pool *pgxpool.Pool }
@@ -137,11 +137,11 @@ func (r ProductRepository) Save(ctx context.Context, p product.Product) error {
 }
 ```
 
-- [ ] **Step 4: Make test state deterministic and verify green**
+- [X] **Step 4: Make test state deterministic and verify green**
 
 At the beginning of the test, execute `TRUNCATE products`; use `t.Cleanup` to close the pool. Run the focused tagged test again and confirm it passes.
 
-- [ ] **Step 5: Commit the adapter and integration test**
+- [X] **Step 5: Commit the adapter and integration test**
 
 Run: `git add go.mod go.sum services/catalog/internal/adapter/postgres && git commit -m "feat(catalog): persist products with PostgreSQL"`
 
@@ -151,24 +151,24 @@ Run: `git add go.mod go.sum services/catalog/internal/adapter/postgres && git co
 - Modify: `Makefile`
 - Modify: `README.md`
 
-- [ ] **Step 1: Add the integration command**
+- [X] **Step 1: Add the integration command**
 
 ```make
 test-integration: db-up migrate-up
 	CATALOG_DATABASE_URL='postgres://catalog:catalog@localhost:5432/catalog?sslmode=disable' go test -tags=integration ./services/catalog/internal/adapter/postgres
 ```
 
-- [ ] **Step 2: Document the workflow**
+- [X] **Step 2: Document the workflow**
 
 Add a README section documenting `make db-up`, `make migrate-up`, `make test-integration`, `make db-down`, and `make db-reset`. State that `make check` does not start Docker or run integration tests.
 
-- [ ] **Step 3: Verify both quality paths**
+- [X] **Step 3: Verify both quality paths**
 
 Run: `make check && make test-integration && git diff --check`
 
 Expected: unit quality checks remain database-free; tagged adapter integration test passes against Compose PostgreSQL.
 
-- [ ] **Step 4: Commit, then stop the local database if desired**
+- [X] **Step 4: Commit, then stop the local database if desired**
 
 Run: `git add Makefile README.md && git commit -m "docs: add Catalog database workflow" && make db-down`
 
