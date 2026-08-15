@@ -7,6 +7,8 @@ This is a learning-by-doing backend for an Amazon-like online store. It uses Go,
 ## Working Agreement
 
 - The human implements concept-heavy work when they want to learn it. Provide explanations, review, and requested boilerplate.
+- Default to learning-oriented plans: state each task's goal, constraints, test/verification steps, and acceptance criteria, but do not include implementation code unless requested. Give conceptual hints before showing a solution when the human is stuck.
+- The human may explicitly delegate a task or issue for full implementation once they are comfortable with its concepts; then provide an implementation-ready plan and carry out the agreed work.
 - Plan a feature before implementation. Track each independently testable feature in a GitHub Issue in `leonardoaraujodf/store`.
 - One issue may contain several small tasks. Keep issues focused on a single vertical capability.
 - Preserve existing user changes. Do not add services, dependencies, infrastructure, or external integrations beyond the active issue without agreement.
