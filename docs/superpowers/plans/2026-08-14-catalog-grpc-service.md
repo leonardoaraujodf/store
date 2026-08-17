@@ -41,7 +41,7 @@
 - Produces package `catalogv1` at `github.com/leonardoaraujodf/store/gen/go/catalog/v1`.
 - Produces `CatalogService.CreateProduct(context.Context, *CreateProductRequest) (*CreateProductResponse, error)`.
 
-- [ ] **Step 1: Install Buf and check the executable**
+- [X] **Step 1: Install Buf and check the executable**
 
 ```bash
 go install github.com/bufbuild/buf/cmd/buf@v1.69.0
@@ -82,7 +82,7 @@ plugins:
       - paths=source_relative
 ```
 
-- [ ] **Step 3: Add the source contract**
+- [X] **Step 3: Add the source contract**
 
 Create `proto/catalog/v1/catalog.proto`:
 
@@ -141,7 +141,7 @@ proto-check:
 	git diff --exit-code -- gen/go
 ```
 
-- [ ] **Step 5: Generate and verify**
+- [X] **Step 5: Generate and verify**
 
 ```bash
 make proto-format
@@ -152,7 +152,7 @@ make proto-check
 
 Expected: both generated Go files appear below `gen/go/catalog/v1`; all commands exit zero. Never edit those generated files.
 
-- [ ] **Step 6: Commit**
+- [X] **Step 6: Commit**
 
 ```bash
 git add buf.yaml buf.gen.yaml proto/catalog/v1/catalog.proto gen/go Makefile
@@ -171,7 +171,7 @@ git commit -m "feat: add Catalog gRPC contract"
 - Produces `config.Config{GRPCAddr string, DatabaseURL string}`.
 - Produces `config.Load() (config.Config, error)`.
 
-- [ ] **Step 1: Write the failing tests**
+- [X] **Step 1: Write the failing tests**
 
 Create `services/catalog/internal/config/config_test.go`:
 
@@ -219,7 +219,7 @@ func TestLoadReturnsErrorForInvalidDatabaseURL(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Confirm the red state**
+- [X] **Step 2: Confirm the red state**
 
 ```bash
 go test ./services/catalog/internal/config
@@ -227,7 +227,7 @@ go test ./services/catalog/internal/config
 
 Expected: FAIL because the package and `config.Load` do not exist.
 
-- [ ] **Step 3: Implement the minimal loader**
+- [X] **Step 3: Implement the minimal loader**
 
 Create `services/catalog/internal/config/config.go`:
 
@@ -262,7 +262,7 @@ func Load() (Config, error) {
 }
 ```
 
-- [ ] **Step 4: Verify green**
+- [X] **Step 4: Verify green**
 
 ```bash
 gofmt -w services/catalog/internal/config
@@ -271,7 +271,7 @@ go test ./services/catalog/internal/config
 
 Expected: PASS. `t.Setenv` makes tests independent from shell environment.
 
-- [ ] **Step 5: Add optional direnv configuration**
+- [X] **Step 5: Add optional direnv configuration**
 
 Add `.envrc` to `.gitignore`. Create `.envrc.example`:
 
@@ -289,7 +289,7 @@ direnv allow
 
 No Go package reads this file.
 
-- [ ] **Step 6: Commit**
+- [X] **Step 6: Commit**
 
 ```bash
 git add services/catalog/internal/config .envrc.example .gitignore
@@ -307,7 +307,7 @@ git commit -m "feat: add Catalog runtime configuration"
 - Consumes `createproduct.UseCase.Execute(context.Context, createproduct.Command) (product.Product, error)`.
 - Produces `grpcadapter.NewCatalogServer(createproduct.UseCase) *grpcadapter.CatalogServer`, implementing `catalogv1.CatalogServiceServer`.
 
-- [ ] **Step 1: Add the gRPC runtime dependency**
+- [X] **Step 1: Add the gRPC runtime dependency**
 
 ```bash
 go get google.golang.org/grpc@v1.76.0
