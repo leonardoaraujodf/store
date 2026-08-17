@@ -1,4 +1,4 @@
-.PHONY: test vet fmt-check check db-up migrate-up db-down db-reset test-integration proto-format proto-lint proto-generate proto-check
+.PHONY: test vet fmt-check check db-up migrate-up db-down db-reset test-integration proto-format proto-lint proto-generate proto-check run-catalog
 
 test:
 	@go test -v ./...
@@ -43,3 +43,6 @@ proto-check:
 	buf lint
 	buf generate
 	git diff --exit-code -- gen/go
+
+run-catalog:
+	go run ./services/catalog/cmd/catalog
