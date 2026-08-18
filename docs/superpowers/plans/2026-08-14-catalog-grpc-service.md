@@ -316,7 +316,7 @@ go mod tidy
 
 Expected: `go.mod` requires `google.golang.org/grpc`, and Go records generated-code/runtime transitive dependencies in `go.sum`.
 
-- [ ] **Step 2: Write a failing gRPC transport test**
+- [X] **Step 2: Write a failing gRPC transport test**
 
 Create `services/catalog/internal/adapter/grpc/catalog_server_test.go`. It must use a generated client against an in-memory `bufconn` listener—not call the server method directly—so serialization and gRPC status mapping are exercised.
 
@@ -413,7 +413,7 @@ func TestCatalogServerCreateProductMapsRepositoryFailureToInternal(t *testing.T)
 }
 ```
 
-- [ ] **Step 3: Confirm the red state**
+- [X] **Step 3: Confirm the red state**
 
 ```bash
 go test ./services/catalog/internal/adapter/grpc
@@ -421,7 +421,7 @@ go test ./services/catalog/internal/adapter/grpc
 
 Expected: FAIL because the `grpc` adapter package and `NewCatalogServer` do not exist.
 
-- [ ] **Step 4: Implement the adapter**
+- [X] **Step 4: Implement the adapter**
 
 Create `services/catalog/internal/adapter/grpc/catalog_server.go`:
 
@@ -474,7 +474,7 @@ func isProductValidationError(err error) bool {
 }
 ```
 
-- [ ] **Step 5: Verify green and commit**
+- [X] **Step 5: Verify green and commit**
 
 ```bash
 gofmt -w services/catalog/internal/adapter/grpc
@@ -496,7 +496,7 @@ Expected: all tests pass. The adapter must contain no SQL and no duplicated prod
 - Consumes `config.Load`, `pgxpool.New`, `postgres.NewProductRepository`, `createproduct.New`, and `grpcadapter.NewCatalogServer`.
 - Produces executable package `./services/catalog/cmd/catalog` and `make run-catalog`.
 
-- [ ] **Step 1: Establish the runtime acceptance check**
+- [X] **Step 1: Establish the runtime acceptance check**
 
 ```bash
 make run-catalog
@@ -504,7 +504,7 @@ make run-catalog
 
 Expected before implementation: FAIL because the command package does not exist. After implementation, with PostgreSQL migrated and the two variables exported, it prints a listening message, remains running, and returns cleanly after Ctrl-C.
 
-- [ ] **Step 2: Implement the composition root**
+- [X] **Step 2: Implement the composition root**
 
 Create `services/catalog/cmd/catalog/main.go`:
 
@@ -574,7 +574,7 @@ func run() error {
 }
 ```
 
-- [ ] **Step 3: Add and run the Make target**
+- [X] **Step 3: Add and run the Make target**
 
 Add `run-catalog` to `.PHONY` and add:
 
@@ -591,7 +591,7 @@ env -u CATALOG_GRPC_ADDR -u CATALOG_DATABASE_URL go run ./services/catalog/cmd/c
 
 Expected: nonzero exit and stderr naming `CATALOG_GRPC_ADDR`. Then load the example variables, run `make db-up migrate-up`, run `make run-catalog`, and interrupt it with Ctrl-C.
 
-- [ ] **Step 4: Verify and commit**
+- [X] **Step 4: Verify and commit**
 
 ```bash
 make check

@@ -1,4 +1,4 @@
-.PHONY: test vet fmt-check check db-up migrate-up db-down db-reset test-integration proto-format proto-lint proto-generate proto-check run-catalog
+.PHONY: test vet fmt-check check db-up migrate-up db-down db-reset test-integration proto-format proto-lint proto-generate proto-check run-catalog test-grpc-integration
 
 test:
 	@go test -v ./...
@@ -46,3 +46,6 @@ proto-check:
 
 run-catalog:
 	go run ./services/catalog/cmd/catalog
+
+test-grpc-integration: db-up migrate-up
+	CATALOG_DATABASE_URL='postgres://catalog:catalog@localhost:5432/catalog?sslmode=disable' go test -tags=integration ./services/catalog/internal/adapter/grpc
