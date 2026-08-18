@@ -750,11 +750,11 @@ git commit -m "test: cover Catalog gRPC PostgreSQL flow"
 **Interfaces:**
 - Produces documentation for contract generation, optional direnv setup, service startup, and database-backed gRPC validation.
 
-- [ ] **Step 1: Update the current-state statement**
+- [x] **Step 1: Update the current-state statement**
 
 Replace the claim that gRPC is not introduced. State that Catalog exposes only versioned gRPC product creation, wired through the use case and PostgreSQL repository. State that REST, Kafka, lookup/listing, and categories remain future work.
 
-- [ ] **Step 2: Add a Catalog gRPC contract section**
+- [x] **Step 2: Add a Catalog gRPC contract section**
 
 Add this content to `README.md`:
 
@@ -771,7 +771,7 @@ make proto-check
 ```
 ```
 
-- [ ] **Step 3: Add a local startup section**
+- [x] **Step 3: Add a local startup section**
 
 Add this content:
 
@@ -791,7 +791,7 @@ make run-catalog
 `.envrc` is local and ignored. Production and other environments export the same variables; the Go program does not load `.envrc`.
 ```
 
-- [ ] **Step 4: Add the gRPC integration command**
+- [x] **Step 4: Add the gRPC integration command**
 
 Document `make test-grpc-integration` next to the existing PostgreSQL integration command. Explain it runs an in-process gRPC server backed by real PostgreSQL, and keep the explicit statement that `make check` remains database-free.
 
