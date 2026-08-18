@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package catalog.v1;
+
+option go_package = "github.com/leonardoaraujodf/store/gen/go/catalog/v1;catalogv1";
+
+service CatalogService {
+  rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse);
+}
+
+message CreateProductRequest {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  int64 price_minor_units = 4;
+  string currency = 5;
+}
+
+message CreateProductResponse {
+  Product product = 1;
+}
+
+message Product {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  int64 price_minor_units = 4;
+  string currency = 5;
+}

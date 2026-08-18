@@ -1,4 +1,4 @@
-.PHONY: test vet fmt-check check db-up migrate-up db-down db-reset test-integration
+.PHONY: test vet fmt-check check db-up migrate-up db-down db-reset test-integration proto-format proto-lint proto-generate proto-check run-catalog test-grpc-integration
 
 test:
 	@go test -v ./...
@@ -28,3 +28,24 @@ db-reset:
 
 test-integration: db-up migrate-up
 	CATALOG_DATABASE_URL='postgres://catalog:catalog@localhost:5432/catalog?sslmode=disable' go test -tags=integration ./services/catalog/internal/adapter/postgres
+
+proto-format:
+	buf format -w proto
+
+proto-lint:
+	buf lint
+
+proto-generate:
+	buf generate
+
+proto-check:
+	buf format --exit-code proto
+	buf lint
+	buf generate
+	git diff --exit-code -- gen/go
+
+run-catalog:
+	go run ./services/catalog/cmd/catalog
+
+test-grpc-integration: db-up migrate-up
+	CATALOG_DATABASE_URL='postgres://catalog:catalog@localhost:5432/catalog?sslmode=disable' go test -tags=integration ./services/catalog/internal/adapter/grpc

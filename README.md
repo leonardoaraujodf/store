@@ -4,7 +4,7 @@ A learning-by-doing backend for an Amazon-like online store. The project uses Go
 
 ## Current State
 
-The project is in **Milestone 1: Foundation**. Catalog has a transport-free product domain and `CreateProduct` application use case, both covered by focused unit tests. Its PostgreSQL repository adapter is covered by a Compose-backed integration test. gRPC and other infrastructure are not yet introduced.
+The project is in **Milestone 1: Foundation**. Catalog exposes versioned gRPC product creation, wired through its `CreateProduct` use case and PostgreSQL repository adapter. REST, Kafka, product lookup/listing, and category management remain future work.
 
 ## Local quality checks
 
@@ -35,9 +35,12 @@ make migrate-up
 
 # Run the PostgreSQL repository integration test.
 make test-integration
+
+# Run the gRPC-to-PostgreSQL integration test.
+make test-grpc-integration
 ```
 
-`make test-integration` starts PostgreSQL, applies pending migrations, and runs the tagged integration test. `make check` remains database-free and does not start Docker or run integration tests.
+`make test-integration` starts PostgreSQL, applies pending migrations, and runs the PostgreSQL repository integration test. `make test-grpc-integration` uses the same database workflow, starts an in-process gRPC server, and validates that a gRPC request persists a product through PostgreSQL. `make check` remains database-free and does not start Docker or run integration tests.
 
 To stop containers while retaining local database data, run:
 
@@ -50,6 +53,33 @@ To remove local database data, recreate PostgreSQL, and reapply migrations, run:
 ```bash
 make db-reset
 ```
+
+## Catalog gRPC contract
+
+The versioned Catalog contract is at `proto/catalog/v1/catalog.proto`. Generated Go files in `gen/go` are committed: edit the protobuf source and regenerate; never edit generated files.
+
+```bash
+make proto-format
+make proto-lint
+make proto-generate
+make proto-check
+```
+
+`make proto-check` verifies protobuf formatting and linting, regenerates Go code, and fails if committed generated files are stale.
+
+## Run Catalog gRPC locally
+
+Catalog requires `CATALOG_GRPC_ADDR` and `CATALOG_DATABASE_URL`; it exits clearly if either is absent or the database URL is invalid. For an optional local direnv setup:
+
+```bash
+cp .envrc.example .envrc
+direnv allow
+make db-up
+make migrate-up
+make run-catalog
+```
+
+`.envrc` is local and ignored. Production and other environments export the same variables; the Go program does not load `.envrc`.
 
 ## Project Guides
 
