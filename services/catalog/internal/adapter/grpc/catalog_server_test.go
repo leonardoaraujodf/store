@@ -24,16 +24,17 @@ type fakeRepository struct {
 	findErr error
 }
 
-func (r *fakeRepository) Save(_ context.Context, p product.Product) error {
+func (r *fakeRepository) Save(_ context.Context, p product.Product) (product.Product, error) {
 	if r.saveErr != nil {
-		return r.saveErr
+		return product.Product{}, r.saveErr
 	}
 
+	p.ID = int64(len(r.saved)) + 1
 	r.saved = append(r.saved, p)
-	return nil
+	return p, nil
 }
 
-func (r *fakeRepository) FindByID(_ context.Context, id string) (product.Product, bool, error) {
+func (r *fakeRepository) FindByID(_ context.Context, id int64) (product.Product, bool, error) {
 	if r.findErr != nil {
 		return product.Product{}, false, r.findErr
 	}
@@ -74,7 +75,6 @@ func TestCatalogServerCreateProductReturnsPersistedProduct(t *testing.T) {
 
 	response, err := client.CreateProduct(context.Background(),
 		&catalogv1.CreateProductRequest{
-			Id:              "product-123",
 			Name:            "Keyboard",
 			Description:     "Mechanical Keyboard",
 			PriceMinorUnits: 12_999,
@@ -87,14 +87,16 @@ func TestCatalogServerCreateProductReturnsPersistedProduct(t *testing.T) {
 		t.Fatalf("saved = %#v, want one product", repository.saved)
 	}
 	if response.GetProduct().GetId() != repository.saved[0].ID {
-		t.Errorf("product ID = %q, want %q", response.GetProduct().GetId(), repository.saved[0].ID)
+		t.Errorf("product ID = %d, want %d", response.GetProduct().GetId(), repository.saved[0].ID)
+	}
+	if response.GetProduct().GetId() == 0 {
+		t.Errorf("product ID = %d, want non-zero", response.GetProduct().GetId())
 	}
 }
 
 func TestCatalogServerCreateProductMapsDomainValidationToInvalidArgument(t *testing.T) {
 	client := newCatalogClient(t, createproduct.New(&fakeRepository{}), getproduct.New(&fakeRepository{}))
 	_, err := client.CreateProduct(context.Background(), &catalogv1.CreateProductRequest{
-		Name:            "Keyboard",
 		PriceMinorUnits: 12_999,
 		Currency:        "BRL",
 	})
@@ -107,7 +109,6 @@ func TestCatalogServerCreateProductMapsRepositoryFailureToInternal(t *testing.T)
 	repository := &fakeRepository{saveErr: errors.New("database unavailable")}
 	client := newCatalogClient(t, createproduct.New(repository), getproduct.New(repository))
 	_, err := client.CreateProduct(context.Background(), &catalogv1.CreateProductRequest{
-		Id:              "product-123",
 		Name:            "Keyboard",
 		PriceMinorUnits: 12_999,
 		Currency:        "BRL",
@@ -121,8 +122,7 @@ func TestCatalogServerGetProductReturnsPersistedProduct(t *testing.T) {
 	repository := &fakeRepository{}
 	client := newCatalogClient(t, createproduct.New(repository), getproduct.New(repository))
 
-	_, err := client.CreateProduct(context.Background(), &catalogv1.CreateProductRequest{
-		Id:              "product-123",
+	createResponse, err := client.CreateProduct(context.Background(), &catalogv1.CreateProductRequest{
 		Name:            "Keyboard",
 		Description:     "Mechanical Keyboard",
 		PriceMinorUnits: 12_999,
@@ -131,13 +131,14 @@ func TestCatalogServerGetProductReturnsPersistedProduct(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateProduct() error = %v", err)
 	}
+	createdID := createResponse.GetProduct().GetId()
 
-	response, err := client.GetProduct(context.Background(), &catalogv1.GetProductRequest{Id: "product-123"})
+	response, err := client.GetProduct(context.Background(), &catalogv1.GetProductRequest{Id: createdID})
 	if err != nil {
 		t.Fatalf("GetProduct() error = %v", err)
 	}
-	if response.GetProduct().GetId() != "product-123" {
-		t.Errorf("product ID = %q, want %q", response.GetProduct().GetId(), "product-123")
+	if response.GetProduct().GetId() != createdID {
+		t.Errorf("product ID = %d, want %d", response.GetProduct().GetId(), createdID)
 	}
 	if response.GetProduct().GetName() != "Keyboard" {
 		t.Errorf("product name = %q, want %q", response.GetProduct().GetName(), "Keyboard")
@@ -153,9 +154,9 @@ func TestCatalogServerGetProductReturnsPersistedProduct(t *testing.T) {
 	}
 }
 
-func TestCatalogServerGetProductMapsEmptyIDToInvalidArgument(t *testing.T) {
+func TestCatalogServerGetProductMapsNonPositiveIDToInvalidArgument(t *testing.T) {
 	client := newCatalogClient(t, createproduct.New(&fakeRepository{}), getproduct.New(&fakeRepository{}))
-	_, err := client.GetProduct(context.Background(), &catalogv1.GetProductRequest{Id: ""})
+	_, err := client.GetProduct(context.Background(), &catalogv1.GetProductRequest{Id: 0})
 	if status.Code(err) != codes.InvalidArgument {
 		t.Fatalf("status.Code(error) = %s, want %s; error = %v", status.Code(err), codes.InvalidArgument, err)
 	}
@@ -163,7 +164,7 @@ func TestCatalogServerGetProductMapsEmptyIDToInvalidArgument(t *testing.T) {
 
 func TestCatalogServerGetProductMapsMissingProductToNotFound(t *testing.T) {
 	client := newCatalogClient(t, createproduct.New(&fakeRepository{}), getproduct.New(&fakeRepository{}))
-	_, err := client.GetProduct(context.Background(), &catalogv1.GetProductRequest{Id: "missing-product"})
+	_, err := client.GetProduct(context.Background(), &catalogv1.GetProductRequest{Id: 999_999_999})
 	if status.Code(err) != codes.NotFound {
 		t.Fatalf("status.Code(error) = %s, want %s; error = %v", status.Code(err), codes.NotFound, err)
 	}
@@ -172,7 +173,7 @@ func TestCatalogServerGetProductMapsMissingProductToNotFound(t *testing.T) {
 func TestCatalogServerGetProductMapsRepositoryFailureToInternal(t *testing.T) {
 	repository := &fakeRepository{findErr: errors.New("database unavailable")}
 	client := newCatalogClient(t, createproduct.New(repository), getproduct.New(repository))
-	_, err := client.GetProduct(context.Background(), &catalogv1.GetProductRequest{Id: "product-123"})
+	_, err := client.GetProduct(context.Background(), &catalogv1.GetProductRequest{Id: 1})
 	if status.Code(err) != codes.Internal {
 		t.Fatalf("status.Code(error) = %s, want %s; error = %v", status.Code(err), codes.Internal, err)
 	}
