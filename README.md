@@ -4,7 +4,7 @@ A learning-by-doing backend for an Amazon-like online store. The project uses Go
 
 ## Current State
 
-The project is in **Milestone 1: Foundation**. Catalog exposes versioned gRPC product creation, wired through its `CreateProduct` use case and PostgreSQL repository adapter. REST, Kafka, product lookup/listing, and category management remain future work.
+The project is in **Milestone 1: Foundation**. Catalog exposes versioned gRPC product creation and retrieval by ID, wired through its `CreateProduct`/`GetProduct` use cases and PostgreSQL repository adapter. REST, Kafka, product listing, and category management remain future work.
 
 ## Local quality checks
 
