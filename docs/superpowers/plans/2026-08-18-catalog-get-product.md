@@ -837,7 +837,7 @@ func isProductValidationError(err error) bool {
 go test -v ./services/catalog/internal/adapter/grpc/...
 ```
 
-Expected: PASS for all six tests (three existing `CreateProduct` tests plus three new `GetProduct` tests).
+Expected: PASS for all seven tests (three existing `CreateProduct` tests plus four new `GetProduct` tests).
 
 - [ ] **Step 5: Note the expected transient build break**
 
