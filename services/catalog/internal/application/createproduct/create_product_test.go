@@ -22,6 +22,10 @@ func (f *fakeRepository) Save(_ context.Context, p product.Product) error {
 	return nil
 }
 
+func (f *fakeRepository) FindByID(_ context.Context, id string) (product.Product, bool, error) {
+	return product.Product{}, false, nil
+}
+
 func TestUseCaseExecuteSavesValidProduct(t *testing.T) {
 	t.Parallel()
 	repository := &fakeRepository{}

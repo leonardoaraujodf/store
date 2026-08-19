@@ -4,7 +4,7 @@ A learning-by-doing backend for an Amazon-like online store. The project uses Go
 
 ## Current State
 
-The project is in **Milestone 1: Foundation**. Catalog exposes versioned gRPC product creation, wired through its `CreateProduct` use case and PostgreSQL repository adapter. REST, Kafka, product lookup/listing, and category management remain future work.
+The project is in **Milestone 1: Foundation**. Catalog exposes versioned gRPC product creation and retrieval by ID, wired through its `CreateProduct`/`GetProduct` use cases and PostgreSQL repository adapter. REST, Kafka, product listing, and category management remain future work.
 
 ## Local quality checks
 
@@ -40,7 +40,7 @@ make test-integration
 make test-grpc-integration
 ```
 
-`make test-integration` starts PostgreSQL, applies pending migrations, and runs the PostgreSQL repository integration test. `make test-grpc-integration` uses the same database workflow, starts an in-process gRPC server, and validates that a gRPC request persists a product through PostgreSQL. `make check` remains database-free and does not start Podman/Docker or run integration tests.
+`make test-integration` starts PostgreSQL, applies pending migrations, and runs the PostgreSQL repository integration test. `make test-grpc-integration` uses the same database workflow, starts an in-process gRPC server, and validates that a gRPC request persists and retrieves a product through PostgreSQL. `make check` remains database-free and does not start Podman/Docker or run integration tests.
 
 To stop containers while retaining local database data, run:
 

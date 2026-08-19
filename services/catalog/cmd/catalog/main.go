@@ -13,6 +13,7 @@ import (
 	grpcadapter "github.com/leonardoaraujodf/store/services/catalog/internal/adapter/grpc"
 	"github.com/leonardoaraujodf/store/services/catalog/internal/adapter/postgres"
 	"github.com/leonardoaraujodf/store/services/catalog/internal/application/createproduct"
+	"github.com/leonardoaraujodf/store/services/catalog/internal/application/getproduct"
 	"github.com/leonardoaraujodf/store/services/catalog/internal/config"
 	"google.golang.org/grpc"
 )
@@ -51,7 +52,7 @@ func run() error {
 	server := grpc.NewServer()
 	repository := postgres.NewProductRepository(pool)
 	catalogv1.RegisterCatalogServiceServer(server,
-		grpcadapter.NewCatalogServer(createproduct.New((repository))))
+		grpcadapter.NewCatalogServer(createproduct.New(repository), getproduct.New(repository)))
 	serveErrors := make(chan error, 1)
 	go func() {
 		serveErrors <- server.Serve(listener)

@@ -2,7 +2,9 @@ package postgres
 
 import (
 	"context"
+	"errors"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/leonardoaraujodf/store/services/catalog/internal/domain/product"
 )
@@ -32,4 +34,22 @@ func (r *Repository) Save(ctx context.Context, product product.Product) error {
 		return err
 	}
 	return nil
+}
+
+func (r *Repository) FindByID(ctx context.Context, id string) (product.Product, bool, error) {
+	var p product.Product
+	err := r.pool.QueryRow(
+		ctx,
+		`SELECT id, name, description, price_minor_units, currency
+		 FROM products
+		 WHERE id = $1`,
+		id,
+	).Scan(&p.ID, &p.Name, &p.Description, &p.PriceMinorUnits, &p.Currency)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return product.Product{}, false, nil
+		}
+		return product.Product{}, false, err
+	}
+	return p, true, nil
 }
