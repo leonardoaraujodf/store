@@ -4,7 +4,9 @@ package postgres_test
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"sync"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -203,5 +205,83 @@ func TestProductRepositorySaveAssignsDistinctSequentialIDs(t *testing.T) {
 	}
 	if savedSecond.ID <= savedFirst.ID {
 		t.Errorf("savedSecond.ID = %d, want greater than savedFirst.ID = %d", savedSecond.ID, savedFirst.ID)
+	}
+}
+
+func TestProductRepositorySaveAssignsDistinctIDsConcurrently(t *testing.T) {
+	ctx := context.Background()
+
+	databaseURL := os.Getenv("CATALOG_DATABASE_URL")
+	if databaseURL == "" {
+		t.Fatalf("CATALOG_DATABASE_URL must be set")
+	}
+
+	pool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		t.Fatalf("pgxpool.New() error = %v", err)
+	}
+	t.Cleanup(pool.Close)
+
+	if _, err := pool.Exec(ctx, "TRUNCATE products"); err != nil {
+		t.Fatalf("TRUNCATE products error = %v", err)
+	}
+
+	const n = 20
+
+	repository := postgres.NewProductRepository(pool)
+
+	var (
+		wg      sync.WaitGroup
+		mu      sync.Mutex
+		ids     = make([]int64, 0, n)
+		saveErr []error
+	)
+
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+
+			p, err := product.New(
+				fmt.Sprintf("Product %d", i),
+				"Concurrent save test product",
+				1_000+int64(i),
+				"BRL",
+			)
+			if err != nil {
+				mu.Lock()
+				saveErr = append(saveErr, err)
+				mu.Unlock()
+				return
+			}
+
+			saved, err := repository.Save(ctx, p)
+
+			mu.Lock()
+			defer mu.Unlock()
+			if err != nil {
+				saveErr = append(saveErr, err)
+				return
+			}
+			ids = append(ids, saved.ID)
+		}(i)
+	}
+
+	wg.Wait()
+
+	for _, err := range saveErr {
+		t.Errorf("Save() error = %v", err)
+	}
+
+	seen := make(map[int64]bool, n)
+	for _, id := range ids {
+		if id == 0 {
+			t.Errorf("Save() returned zero ID")
+		}
+		seen[id] = true
+	}
+
+	if len(seen) != n {
+		t.Fatalf("Save() assigned %d distinct IDs, want %d (ids = %v)", len(seen), n, ids)
 	}
 }
