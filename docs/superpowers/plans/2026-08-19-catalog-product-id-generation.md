@@ -182,7 +182,7 @@ Edit `services/catalog/internal/application/createproduct/create_product_test.go
 - Change `fakeRepository.Save` to signature `func (f *fakeRepository) Save(_ context.Context, p product.Product) (product.Product, error)`. It must assign `p.ID` sequentially starting at 1 (the next ID being `int64(len(f.saved)) + 1`) before appending to `f.saved` and returning the stored copy, `nil` — mirroring the identity semantics PostgreSQL will provide.
 - Change `fakeRepository.FindByID` signature to `func (f *fakeRepository) FindByID(_ context.Context, id int64) (product.Product, bool, error)` (body unchanged: still always returns `product.Product{}, false, nil`).
 - `TestUseCaseExecuteSavesValidProduct`: build `createproduct.Command{Name: "Keyboard", Description: "Mechanical Keyboard", PriceMinorUnits: 12_999, Currency: "BRL"}` (no `ID` field). Keep the existing assertions that `Execute`'s result equals `repository.saved[0]`, and add an assertion that `got.ID != 0`.
-- `TestUseCaseExecuteDoesNotSaveInvalidProduct`: this test's `Command` already omits `Name`, so it is already an invalid-name case; change only its error assertion from `product.ErrEmptyID` to `product.ErrEmptyName` (there is no longer an ID-based invalidity — an empty name is now the invalid case this test exercises).
+- `TestUseCaseExecuteDoesNotSaveInvalidProduct`: this test's `Command` currently sets `Name: "Keyboard"` and omits `ID` — the missing `ID` is what makes it invalid today (`product.ErrEmptyID`). Since `ID` is no longer a construction parameter (Task 2), also drop `Name: "Keyboard",` from the `Command` literal, leaving only `PriceMinorUnits: 12_999, Currency: "BRL"` set, so the case is invalid because `Name` is empty. Change the error assertion from `product.ErrEmptyID` to `product.ErrEmptyName`.
 - `TestUseCaseExecuteReturnsRepositoryError`: change the `Command` literal to drop `ID`, and change `fakeRepository{saveErr: wantErr}`'s `Save` (from the shared fake) to return `product.Product{}, wantErr` when `saveErr` is set.
 
 - [ ] **Step 2: Run the createproduct tests to verify they fail**
@@ -419,7 +419,7 @@ Edit `services/catalog/internal/adapter/grpc/catalog_server_test.go`:
 - `TestCatalogServerCreateProductReturnsPersistedProduct`: drop `Id: "product-123"` from the request; change the assertion from comparing `response.GetProduct().GetId()` to `repository.saved[0].ID` (equality still makes sense — the fake stores exactly what it returns) to also assert `response.GetProduct().GetId() != 0`.
 - `TestCatalogServerCreateProductMapsDomainValidationToInvalidArgument`: no `Id` field to drop (it never set one); unchanged otherwise.
 - `TestCatalogServerCreateProductMapsRepositoryFailureToInternal`: drop `Id: "product-123"` from the request.
-- `TestCatalogServerGetProductReturnsPersistedProduct`: drop `Id: "product-123"` from the `CreateProduct` request; capture the created product's ID from `response.GetProduct().GetId()` after `CreateProduct`; call `GetProduct` with `&catalogv1.GetProductRequest{Id: createdID}`; change the ID assertion to `response.GetProduct().GetId() != createdID` (keep the existing name/description/price/currency assertions).
+- `TestCatalogServerGetProductReturnsPersistedProduct`: drop `Id: "product-123"` from the `CreateProduct` request; capture the created product's ID from `response.GetProduct().GetId()` after `CreateProduct`; call `GetProduct` with `&catalogv1.GetProductRequest{Id: createdID}`; change the ID assertion to `response.GetProduct().GetId() != createdID` → this must read `==`, i.e. assert the `GetProduct` response's ID **equals** `createdID` (keep the existing name/description/price/currency assertions).
 - `TestCatalogServerGetProductMapsEmptyIDToInvalidArgument`: rename to `TestCatalogServerGetProductMapsNonPositiveIDToInvalidArgument`; change `&catalogv1.GetProductRequest{Id: ""}` to `&catalogv1.GetProductRequest{Id: 0}`.
 - `TestCatalogServerGetProductMapsMissingProductToNotFound`: change `&catalogv1.GetProductRequest{Id: "missing-product"}` to `&catalogv1.GetProductRequest{Id: 999_999_999}`.
 - `TestCatalogServerGetProductMapsRepositoryFailureToInternal`: change `&catalogv1.GetProductRequest{Id: "product-123"}` to `&catalogv1.GetProductRequest{Id: 1}`.
@@ -486,7 +486,7 @@ Edit `TestCatalogServerCreateProductPersistsThroughPostgreSQL` in `services/cata
 - [ ] **Step 2: Update the get-after-create test**
 
 Edit `TestCatalogServerGetProductPersistsThroughPostgreSQL` in the same file:
-- Drop `Id: "product-123"` from the `CreateProduct` request; capture the created product's ID from its response (`createResponse.GetProduct().GetId()`).
+- Drop `Id: "product-123"` from the `CreateProduct` request; capture its response instead of discarding it, and read the assigned ID into a variable: `createdID := createResponse.GetProduct().GetId()`.
 - Change the `GetProduct` call to use `&catalogv1.GetProductRequest{Id: createdID}`.
 - Change the missing-product `GetProduct` call from `&catalogv1.GetProductRequest{Id: "missing-product"}` to `&catalogv1.GetProductRequest{Id: 999_999_999}`, keeping the `codes.NotFound` assertion.
 
