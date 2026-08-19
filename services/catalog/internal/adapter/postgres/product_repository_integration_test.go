@@ -30,7 +30,6 @@ func TestProductRepositorySavePersistProduct(t *testing.T) {
 		t.Fatalf("TRUNCATE products error = %v", err)
 	}
 	want, err := product.New(
-		"product-123",
 		"Keyboard",
 		"Mechanical keyboard",
 		12_999,
@@ -40,8 +39,12 @@ func TestProductRepositorySavePersistProduct(t *testing.T) {
 		t.Fatalf("product.New() error = %v", err)
 	}
 	repository := postgres.NewProductRepository(pool)
-	if err := repository.Save(ctx, want); err != nil {
+	saved, err := repository.Save(ctx, want)
+	if err != nil {
 		t.Fatalf("Save() error = %v", err)
+	}
+	if saved.ID == 0 {
+		t.Fatalf("Save() saved.ID = 0, want nonzero")
 	}
 	var got product.Product
 	err = pool.QueryRow(
@@ -49,7 +52,7 @@ func TestProductRepositorySavePersistProduct(t *testing.T) {
 		`SELECT id, name, description, price_minor_units, currency
 		FROM products
 		WHERE id = $1`,
-		want.ID,
+		saved.ID,
 	).Scan(
 		&got.ID,
 		&got.Name,
@@ -61,8 +64,8 @@ func TestProductRepositorySavePersistProduct(t *testing.T) {
 		t.Fatalf("QueryRow().Scan() error = %v", err)
 	}
 
-	if got != want {
-		t.Errorf("persisted product = %#v, want %#v", got, want)
+	if got != saved {
+		t.Errorf("persisted product = %#v, want %#v", got, saved)
 	}
 }
 
@@ -84,7 +87,6 @@ func TestProductRepositoryFindByIDReturnsPersistedProduct(t *testing.T) {
 		t.Fatalf("TRUNCATE products error = %v", err)
 	}
 	want, err := product.New(
-		"product-123",
 		"Keyboard",
 		"Mechanical keyboard",
 		12_999,
@@ -94,19 +96,20 @@ func TestProductRepositoryFindByIDReturnsPersistedProduct(t *testing.T) {
 		t.Fatalf("product.New() error = %v", err)
 	}
 	repository := postgres.NewProductRepository(pool)
-	if err := repository.Save(ctx, want); err != nil {
+	saved, err := repository.Save(ctx, want)
+	if err != nil {
 		t.Fatalf("Save() error = %v", err)
 	}
 
-	got, found, err := repository.FindByID(ctx, "product-123")
+	got, found, err := repository.FindByID(ctx, saved.ID)
 	if err != nil {
 		t.Fatalf("FindByID() error = %v", err)
 	}
 	if !found {
 		t.Fatalf("FindByID() found = false, want true")
 	}
-	if got != want {
-		t.Errorf("FindByID() = %#v, want %#v", got, want)
+	if got != saved {
+		t.Errorf("FindByID() = %#v, want %#v", got, saved)
 	}
 }
 
@@ -129,7 +132,7 @@ func TestProductRepositoryFindByIDReturnsNotFoundForMissingProduct(t *testing.T)
 	}
 
 	repository := postgres.NewProductRepository(pool)
-	got, found, err := repository.FindByID(ctx, "missing-product")
+	got, found, err := repository.FindByID(ctx, int64(999_999_999))
 	if err != nil {
 		t.Fatalf("FindByID() error = %v", err)
 	}
@@ -138,5 +141,67 @@ func TestProductRepositoryFindByIDReturnsNotFoundForMissingProduct(t *testing.T)
 	}
 	if got != (product.Product{}) {
 		t.Errorf("FindByID() = %#v, want zero value", got)
+	}
+}
+
+func TestProductRepositorySaveAssignsDistinctSequentialIDs(t *testing.T) {
+	ctx := context.Background()
+
+	databaseURL := os.Getenv("CATALOG_DATABASE_URL")
+	if databaseURL == "" {
+		t.Fatalf("CATALOG_DATABASE_URL must be set")
+	}
+
+	pool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		t.Fatalf("pgxpool.New() error = %v", err)
+	}
+	t.Cleanup(pool.Close)
+
+	if _, err := pool.Exec(ctx, "TRUNCATE products"); err != nil {
+		t.Fatalf("TRUNCATE products error = %v", err)
+	}
+
+	first, err := product.New(
+		"Keyboard",
+		"Mechanical keyboard",
+		12_999,
+		"BRL",
+	)
+	if err != nil {
+		t.Fatalf("product.New() error = %v", err)
+	}
+	second, err := product.New(
+		"Mouse",
+		"Wireless mouse",
+		4_999,
+		"BRL",
+	)
+	if err != nil {
+		t.Fatalf("product.New() error = %v", err)
+	}
+
+	repository := postgres.NewProductRepository(pool)
+
+	savedFirst, err := repository.Save(ctx, first)
+	if err != nil {
+		t.Fatalf("Save() error = %v", err)
+	}
+	savedSecond, err := repository.Save(ctx, second)
+	if err != nil {
+		t.Fatalf("Save() error = %v", err)
+	}
+
+	if savedFirst.ID == 0 {
+		t.Fatalf("Save() savedFirst.ID = 0, want nonzero")
+	}
+	if savedSecond.ID == 0 {
+		t.Fatalf("Save() savedSecond.ID = 0, want nonzero")
+	}
+	if savedFirst.ID == savedSecond.ID {
+		t.Fatalf("Save() assigned duplicate IDs: %d", savedFirst.ID)
+	}
+	if savedSecond.ID <= savedFirst.ID {
+		t.Errorf("savedSecond.ID = %d, want greater than savedFirst.ID = %d", savedSecond.ID, savedFirst.ID)
 	}
 }

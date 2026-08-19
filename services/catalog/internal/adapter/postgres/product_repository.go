@@ -19,24 +19,23 @@ func NewProductRepository(pool *pgxpool.Pool) *Repository {
 	}
 }
 
-func (r *Repository) Save(ctx context.Context, product product.Product) error {
-	_, err := r.pool.Exec(
+func (r *Repository) Save(ctx context.Context, p product.Product) (product.Product, error) {
+	err := r.pool.QueryRow(
 		ctx,
-		`INSERT INTO products(id, name, description, price_minor_units, currency)
-		 VALUES($1, $2, $3, $4, $5)`,
-		product.ID,
-		product.Name,
-		product.Description,
-		product.PriceMinorUnits,
-		product.Currency,
-	)
+		`INSERT INTO products(name, description, price_minor_units, currency)
+		 VALUES($1, $2, $3, $4) RETURNING id`,
+		p.Name,
+		p.Description,
+		p.PriceMinorUnits,
+		p.Currency,
+	).Scan(&p.ID)
 	if err != nil {
-		return err
+		return product.Product{}, err
 	}
-	return nil
+	return p, nil
 }
 
-func (r *Repository) FindByID(ctx context.Context, id string) (product.Product, bool, error) {
+func (r *Repository) FindByID(ctx context.Context, id int64) (product.Product, bool, error) {
 	var p product.Product
 	err := r.pool.QueryRow(
 		ctx,
