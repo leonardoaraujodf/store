@@ -29,6 +29,13 @@ This is a learning-by-doing backend for an Amazon-like online store. It uses Go,
 - Run formatting, static analysis, tests, and generated-code checks before considering a feature complete.
 - Early CI reports checks without blocking merges while the tooling is being learned. Tighten enforcement only by an explicit project decision.
 
+## Lessons Learned
+
+- **This machine has Podman, not Docker.** `docker` is a personal shell alias to `podman`; `make` runs recipes through non-interactive `/bin/sh`, which never sees that alias. The Makefile targets it via `COMPOSE ?= podman compose` — never hardcode `docker` in a Makefile recipe or script here, use `$(COMPOSE)` (or the override `make COMPOSE="docker compose" ...` on a machine that does have Docker).
+- **`compose.yaml` pins `name: store-catalog`.** Compose otherwise derives the project name from the current directory's basename, which differs per git worktree — without the pin, `make db-up` from different worktrees would silently create separate containers/volumes instead of sharing the one local dev database. Don't remove it.
+- **Check a spec's own prerequisite notes before implementing.** A design/plan written while a dependency is still an open PR (e.g. issue #9's spec depended on issue #7/PR #8) says so in its own "Prerequisite and branch handling" section. Once that PR merges, rebase the working branch onto `main` before continuing — don't assume the branch is still current just because the plan was already approved.
+- **Keep commit messages short.** One-line Conventional Commit subject (`feat: ...`, `docs: ...`, `test: ...`), optionally a short paragraph if genuinely useful. Don't narrate command usage, verification steps, or process detail in the commit message body.
+
 ## Documentation
 
 - Read `docs/architecture.md` for the system model and milestone boundaries.
