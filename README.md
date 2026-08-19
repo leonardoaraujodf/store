@@ -24,7 +24,7 @@ make test
 
 ## Local Catalog database
 
-Docker and Docker Compose are required for the PostgreSQL integration workflow. The commands below use a local PostgreSQL database named `catalog` and versioned Catalog migrations.
+Podman (with the `podman compose` command) is required for the PostgreSQL integration workflow; the Makefile defaults to it via `COMPOSE ?= podman compose`. Docker and Docker Compose work too — pass `make COMPOSE="docker compose" ...` to override. The commands below use a local PostgreSQL database named `catalog` and versioned Catalog migrations.
 
 ```bash
 # Start PostgreSQL and wait until it is healthy.
@@ -40,7 +40,7 @@ make test-integration
 make test-grpc-integration
 ```
 
-`make test-integration` starts PostgreSQL, applies pending migrations, and runs the PostgreSQL repository integration test. `make test-grpc-integration` uses the same database workflow, starts an in-process gRPC server, and validates that a gRPC request persists a product through PostgreSQL. `make check` remains database-free and does not start Docker or run integration tests.
+`make test-integration` starts PostgreSQL, applies pending migrations, and runs the PostgreSQL repository integration test. `make test-grpc-integration` uses the same database workflow, starts an in-process gRPC server, and validates that a gRPC request persists a product through PostgreSQL. `make check` remains database-free and does not start Podman/Docker or run integration tests.
 
 To stop containers while retaining local database data, run:
 

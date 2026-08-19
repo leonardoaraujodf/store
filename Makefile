@@ -1,5 +1,7 @@
 .PHONY: test vet fmt-check check db-up migrate-up db-down db-reset test-integration proto-format proto-lint proto-generate proto-check run-catalog test-grpc-integration
 
+COMPOSE ?= podman compose
+
 test:
 	@go test -v ./...
 
@@ -13,16 +15,16 @@ fmt-check:
 check: fmt-check vet test
 
 db-up:
-	docker compose up -d --wait postgres
+	$(COMPOSE) up -d --wait postgres
 
 migrate-up:
-	docker compose run --rm migrate
+	$(COMPOSE) run --rm migrate
 
 db-down:
-	docker compose down
+	$(COMPOSE) down
 
 db-reset:
-	docker compose down -v
+	$(COMPOSE) down -v
 	$(MAKE) db-up
 	$(MAKE) migrate-up
 

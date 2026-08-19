@@ -1,3 +1,5 @@
+name: store-catalog
+
 services:
   postgres:
     image: postgres:17-alpine
