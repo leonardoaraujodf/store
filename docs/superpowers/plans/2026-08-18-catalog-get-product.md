@@ -536,10 +536,12 @@ Expected: all tests in `services/catalog/internal/adapter/postgres` pass, includ
 - [ ] **Step 6: Confirm the database-free build still compiles**
 
 ```bash
-make check
+go build ./...
+go vet ./services/catalog/internal/adapter/postgres/... ./services/catalog/internal/application/...
+go test ./services/catalog/internal/application/... ./services/catalog/internal/domain/... ./services/catalog/internal/config/...
 ```
 
-Expected: passes (integration-tagged tests are excluded by the build tag, so `make check` stays database-free).
+Expected: all succeed. Do **not** run `make check` (or bare `go vet ./...`/`go test ./...`) yet: `services/catalog/internal/adapter/grpc/catalog_server_test.go`'s `fakeRepository` test double still only implements `Save`, so it fails to satisfy the newly-extended `port.ProductRepository` (missing `FindByID`) when the `grpc` package's tests are type-checked. That gap is expected — Task 4 replaces `catalog_server_test.go` wholesale, including that test double — and is not a regression to fix here. `go build ./...` succeeds regardless because plain `build` never type-checks `_test.go` files.
 
 - [ ] **Step 7: Commit**
 
