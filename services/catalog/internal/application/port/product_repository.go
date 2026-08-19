@@ -7,6 +7,6 @@ import (
 )
 
 type ProductRepository interface {
-	Save(context.Context, product.Product) error
-	FindByID(ctx context.Context, id string) (product.Product, bool, error)
+	Save(context.Context, product.Product) (product.Product, error)
+	FindByID(ctx context.Context, id int64) (product.Product, bool, error)
 }

@@ -14,15 +14,16 @@ type fakeRepository struct {
 	saveErr error
 }
 
-func (f *fakeRepository) Save(_ context.Context, p product.Product) error {
+func (f *fakeRepository) Save(_ context.Context, p product.Product) (product.Product, error) {
 	if f.saveErr != nil {
-		return f.saveErr
+		return product.Product{}, f.saveErr
 	}
+	p.ID = int64(len(f.saved)) + 1
 	f.saved = append(f.saved, p)
-	return nil
+	return p, nil
 }
 
-func (f *fakeRepository) FindByID(_ context.Context, id string) (product.Product, bool, error) {
+func (f *fakeRepository) FindByID(_ context.Context, id int64) (product.Product, bool, error) {
 	return product.Product{}, false, nil
 }
 
@@ -31,7 +32,6 @@ func TestUseCaseExecuteSavesValidProduct(t *testing.T) {
 	repository := &fakeRepository{}
 	useCase := createproduct.New(repository)
 	command := createproduct.Command{
-		ID:              "product-123",
 		Name:            "Keyboard",
 		Description:     "Mechanical Keyboard",
 		PriceMinorUnits: 12_999,
@@ -47,6 +47,9 @@ func TestUseCaseExecuteSavesValidProduct(t *testing.T) {
 	if got != repository.saved[0] {
 		t.Fatalf("result = %#v, saved = %#v", got, repository.saved[0])
 	}
+	if got.ID == 0 {
+		t.Fatalf("got.ID = %v, want non-zero", got.ID)
+	}
 }
 
 func TestUseCaseExecuteDoesNotSaveInvalidProduct(t *testing.T) {
@@ -55,12 +58,11 @@ func TestUseCaseExecuteDoesNotSaveInvalidProduct(t *testing.T) {
 	repository := &fakeRepository{}
 	useCase := createproduct.New(repository)
 	_, err := useCase.Execute(context.Background(), createproduct.Command{
-		Name:            "Keyboard",
 		PriceMinorUnits: 12_999,
 		Currency:        "BRL",
 	})
-	if !errors.Is(err, product.ErrEmptyID) {
-		t.Fatalf("Execute() error = %v, want %v", err, product.ErrEmptyID)
+	if !errors.Is(err, product.ErrEmptyName) {
+		t.Fatalf("Execute() error = %v, want %v", err, product.ErrEmptyName)
 	}
 	if len(repository.saved) != 0 {
 		t.Fatalf("saved = %#v, want no products", repository.saved)
@@ -73,7 +75,6 @@ func TestUseCaseExecuteReturnsRepositoryError(t *testing.T) {
 	wantErr := errors.New("repository unavailable")
 	useCase := createproduct.New(&fakeRepository{saveErr: wantErr})
 	_, err := useCase.Execute(context.Background(), createproduct.Command{
-		ID:              "product-123",
 		Name:            "Keyboard",
 		PriceMinorUnits: 12_999,
 		Currency:        "BRL",
