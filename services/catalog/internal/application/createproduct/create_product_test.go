@@ -48,7 +48,7 @@ func TestUseCaseExecuteSavesValidProduct(t *testing.T) {
 		t.Fatalf("result = %#v, saved = %#v", got, repository.saved[0])
 	}
 	if got.ID == 0 {
-		t.Fatalf("got.ID = %v, want non-zero", got.ID)
+		t.Fatalf("got.ID = %d, want non-zero", got.ID)
 	}
 }
 
