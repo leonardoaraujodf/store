@@ -13,6 +13,7 @@ import (
 	grpcadapter "github.com/leonardoaraujodf/store/services/catalog/internal/adapter/grpc"
 	"github.com/leonardoaraujodf/store/services/catalog/internal/adapter/postgres"
 	"github.com/leonardoaraujodf/store/services/catalog/internal/application/createproduct"
+	"github.com/leonardoaraujodf/store/services/catalog/internal/application/getproduct"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -39,7 +40,7 @@ func TestCatalogServerCreateProductPersistsThroughPostgreSQL(t *testing.T) {
 	server := grpc.NewServer()
 	repository := postgres.NewProductRepository(pool)
 	catalogv1.RegisterCatalogServiceServer(server,
-		grpcadapter.NewCatalogServer(createproduct.New(repository)))
+		grpcadapter.NewCatalogServer(createproduct.New(repository), getproduct.New(repository)))
 	go func() {
 		_ = server.Serve(listener)
 	}()
@@ -92,5 +93,66 @@ func TestCatalogServerCreateProductPersistsThroughPostgreSQL(t *testing.T) {
 	}
 	if invalidRows != 0 {
 		t.Errorf("invalid persisted rows = %d, want 0", invalidRows)
+	}
+}
+
+func TestCatalogServerGetProductPersistsThroughPostgreSQL(t *testing.T) {
+	ctx := context.Background()
+	databaseURL := os.Getenv("CATALOG_DATABASE_URL")
+	if databaseURL == "" {
+		t.Fatal("CATALOG_DATABASE_URL must be set")
+	}
+	pool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		t.Fatalf("pgxpool.New() error = %v", err)
+	}
+	t.Cleanup(pool.Close)
+	if _, err := pool.Exec(ctx, "TRUNCATE products"); err != nil {
+		t.Fatalf("TRUNCATE products error = %v", err)
+	}
+
+	listener := bufconn.Listen(1024 * 1024)
+	server := grpc.NewServer()
+	repository := postgres.NewProductRepository(pool)
+	catalogv1.RegisterCatalogServiceServer(server,
+		grpcadapter.NewCatalogServer(createproduct.New(repository), getproduct.New(repository)))
+	go func() {
+		_ = server.Serve(listener)
+	}()
+	t.Cleanup(server.Stop)
+	connection, err := grpc.DialContext(ctx, "bufnet",
+		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+			return listener.Dial()
+		}),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		t.Fatalf("grpc.DialContext() error = %v", err)
+	}
+	t.Cleanup(func() { _ = connection.Close() })
+	client := catalogv1.NewCatalogServiceClient(connection)
+
+	_, err = client.CreateProduct(ctx, &catalogv1.CreateProductRequest{
+		Id:              "product-123",
+		Name:            "Keyboard",
+		Description:     "Mechanical keyboard",
+		PriceMinorUnits: 12_999,
+		Currency:        "BRL",
+	})
+	if err != nil {
+		t.Fatalf("CreateProduct() error = %v", err)
+	}
+
+	response, err := client.GetProduct(ctx, &catalogv1.GetProductRequest{Id: "product-123"})
+	if err != nil {
+		t.Fatalf("GetProduct() error = %v", err)
+	}
+	if response.GetProduct().GetName() != "Keyboard" {
+		t.Errorf("product name = %q, want %q", response.GetProduct().GetName(), "Keyboard")
+	}
+
+	_, err = client.GetProduct(ctx, &catalogv1.GetProductRequest{Id: "missing-product"})
+	if status.Code(err) != codes.NotFound {
+		t.Fatalf("status.Code(error) = %s, want %s; error = %v", status.Code(err), codes.NotFound, err)
 	}
 }
