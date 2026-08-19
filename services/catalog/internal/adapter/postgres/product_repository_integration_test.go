@@ -65,3 +65,78 @@ func TestProductRepositorySavePersistProduct(t *testing.T) {
 		t.Errorf("persisted product = %#v, want %#v", got, want)
 	}
 }
+
+func TestProductRepositoryFindByIDReturnsPersistedProduct(t *testing.T) {
+	ctx := context.Background()
+
+	databaseURL := os.Getenv("CATALOG_DATABASE_URL")
+	if databaseURL == "" {
+		t.Fatalf("CATALOG_DATABASE_URL must be set")
+	}
+
+	pool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		t.Fatalf("pgxpool.New() error = %v", err)
+	}
+	t.Cleanup(pool.Close)
+
+	if _, err := pool.Exec(ctx, "TRUNCATE products"); err != nil {
+		t.Fatalf("TRUNCATE products error = %v", err)
+	}
+	want, err := product.New(
+		"product-123",
+		"Keyboard",
+		"Mechanical keyboard",
+		12_999,
+		"BRL",
+	)
+	if err != nil {
+		t.Fatalf("product.New() error = %v", err)
+	}
+	repository := postgres.NewProductRepository(pool)
+	if err := repository.Save(ctx, want); err != nil {
+		t.Fatalf("Save() error = %v", err)
+	}
+
+	got, found, err := repository.FindByID(ctx, "product-123")
+	if err != nil {
+		t.Fatalf("FindByID() error = %v", err)
+	}
+	if !found {
+		t.Fatalf("FindByID() found = false, want true")
+	}
+	if got != want {
+		t.Errorf("FindByID() = %#v, want %#v", got, want)
+	}
+}
+
+func TestProductRepositoryFindByIDReturnsNotFoundForMissingProduct(t *testing.T) {
+	ctx := context.Background()
+
+	databaseURL := os.Getenv("CATALOG_DATABASE_URL")
+	if databaseURL == "" {
+		t.Fatalf("CATALOG_DATABASE_URL must be set")
+	}
+
+	pool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		t.Fatalf("pgxpool.New() error = %v", err)
+	}
+	t.Cleanup(pool.Close)
+
+	if _, err := pool.Exec(ctx, "TRUNCATE products"); err != nil {
+		t.Fatalf("TRUNCATE products error = %v", err)
+	}
+
+	repository := postgres.NewProductRepository(pool)
+	got, found, err := repository.FindByID(ctx, "missing-product")
+	if err != nil {
+		t.Fatalf("FindByID() error = %v", err)
+	}
+	if found {
+		t.Fatalf("FindByID() found = true, want false")
+	}
+	if got != (product.Product{}) {
+		t.Errorf("FindByID() = %#v, want zero value", got)
+	}
+}
