@@ -40,7 +40,7 @@ make test-integration
 make test-grpc-integration
 ```
 
-`make test-integration` starts PostgreSQL, applies pending migrations, and runs the PostgreSQL repository integration test. `make test-grpc-integration` uses the same database workflow, starts an in-process gRPC server, and validates that a gRPC request persists a product through PostgreSQL. `make check` remains database-free and does not start Podman/Docker or run integration tests.
+`make test-integration` starts PostgreSQL, applies pending migrations, and runs the PostgreSQL repository integration test. `make test-grpc-integration` uses the same database workflow, starts an in-process gRPC server, and validates that a gRPC request persists and retrieves a product through PostgreSQL. `make check` remains database-free and does not start Podman/Docker or run integration tests.
 
 To stop containers while retaining local database data, run:
 

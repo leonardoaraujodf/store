@@ -142,6 +142,15 @@ func TestCatalogServerGetProductReturnsPersistedProduct(t *testing.T) {
 	if response.GetProduct().GetName() != "Keyboard" {
 		t.Errorf("product name = %q, want %q", response.GetProduct().GetName(), "Keyboard")
 	}
+	if response.GetProduct().GetDescription() != "Mechanical Keyboard" {
+		t.Errorf("product description = %q, want %q", response.GetProduct().GetDescription(), "Mechanical Keyboard")
+	}
+	if response.GetProduct().GetPriceMinorUnits() != 12_999 {
+		t.Errorf("product price minor units = %d, want %d", response.GetProduct().GetPriceMinorUnits(), 12_999)
+	}
+	if response.GetProduct().GetCurrency() != "BRL" {
+		t.Errorf("product currency = %q, want %q", response.GetProduct().GetCurrency(), "BRL")
+	}
 }
 
 func TestCatalogServerGetProductMapsEmptyIDToInvalidArgument(t *testing.T) {

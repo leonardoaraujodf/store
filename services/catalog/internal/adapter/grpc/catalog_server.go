@@ -37,13 +37,7 @@ func (s *CatalogServer) CreateProduct(ctx context.Context, request *catalogv1.Cr
 		return nil, status.Error(codes.Internal, "could not create product")
 	}
 	return &catalogv1.CreateProductResponse{
-		Product: &catalogv1.Product{
-			Id:              p.ID,
-			Name:            p.Name,
-			Description:     p.Description,
-			PriceMinorUnits: p.PriceMinorUnits,
-			Currency:        p.Currency,
-		},
+		Product: toProto(p),
 	}, nil
 }
 
@@ -59,14 +53,18 @@ func (s *CatalogServer) GetProduct(ctx context.Context, request *catalogv1.GetPr
 		return nil, status.Error(codes.Internal, "could not get product")
 	}
 	return &catalogv1.GetProductResponse{
-		Product: &catalogv1.Product{
-			Id:              p.ID,
-			Name:            p.Name,
-			Description:     p.Description,
-			PriceMinorUnits: p.PriceMinorUnits,
-			Currency:        p.Currency,
-		},
+		Product: toProto(p),
 	}, nil
+}
+
+func toProto(p product.Product) *catalogv1.Product {
+	return &catalogv1.Product{
+		Id:              p.ID,
+		Name:            p.Name,
+		Description:     p.Description,
+		PriceMinorUnits: p.PriceMinorUnits,
+		Currency:        p.Currency,
+	}
 }
 
 func isProductValidationError(err error) bool {
