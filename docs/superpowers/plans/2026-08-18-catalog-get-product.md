@@ -330,14 +330,14 @@ go test -v ./services/catalog/internal/application/getproduct/...
 
 Expected: PASS for all four tests.
 
-- [ ] **Step 7: Confirm the rest of the module still compiles and passes**
+- [ ] **Step 7: Confirm the affected packages still compile and pass**
 
 ```bash
-go build ./...
+go build ./services/catalog/internal/...
 go test ./services/catalog/internal/application/createproduct/...
 ```
 
-Expected: both succeed — `createproduct`'s existing three tests still pass unchanged.
+Expected: both succeed — `createproduct`'s existing three tests still pass unchanged. Do **not** run `go build ./...` yet: `services/catalog/cmd/catalog/main.go` still passes `*postgres.Repository` into `createproduct.New`, and that concrete type won't satisfy the newly-extended `port.ProductRepository` (missing `FindByID`) until Task 3 implements it there. That whole-module build gap is expected and closes in Task 3; it is not a regression to fix here.
 
 - [ ] **Step 8: Commit**
 
