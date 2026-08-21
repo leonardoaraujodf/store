@@ -10,8 +10,10 @@ import (
 
 var ErrProductNotFound = errors.New("product not found")
 
+var ErrInvalidID = errors.New("product id must be positive")
+
 type Command struct {
-	ID string
+	ID int64
 }
 
 type UseCase struct {
@@ -25,8 +27,8 @@ func New(repository port.ProductRepository) UseCase {
 }
 
 func (u UseCase) Execute(ctx context.Context, command Command) (product.Product, error) {
-	if command.ID == "" {
-		return product.Product{}, product.ErrEmptyID
+	if command.ID <= 0 {
+		return product.Product{}, ErrInvalidID
 	}
 
 	p, found, err := u.repository.FindByID(ctx, command.ID)

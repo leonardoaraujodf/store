@@ -58,7 +58,6 @@ func TestCatalogServerCreateProductPersistsThroughPostgreSQL(t *testing.T) {
 	client := catalogv1.NewCatalogServiceClient(connection)
 
 	response, err := client.CreateProduct(ctx, &catalogv1.CreateProductRequest{
-		Id:              "product-123",
 		Name:            "Keyboard",
 		Description:     "Mechanical keyboard",
 		PriceMinorUnits: 12_999,
@@ -67,12 +66,13 @@ func TestCatalogServerCreateProductPersistsThroughPostgreSQL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateProduct() error = %v", err)
 	}
-	if response.GetProduct().GetId() != "product-123" {
-		t.Fatalf("response product ID = %q, want %q", response.GetProduct().GetId(), "product-123")
+	createdID := response.GetProduct().GetId()
+	if createdID == 0 {
+		t.Fatalf("response product ID = %d, want non-zero", createdID)
 	}
 
 	var persistedName string
-	if err := pool.QueryRow(ctx, "SELECT name FROM products where id = $1", "product-123").Scan(&persistedName); err != nil {
+	if err := pool.QueryRow(ctx, "SELECT name FROM products where id = $1", createdID).Scan(&persistedName); err != nil {
 		t.Fatalf("QueryRow().Scan() error = %v", err)
 	}
 	if persistedName != "Keyboard" {
@@ -80,19 +80,18 @@ func TestCatalogServerCreateProductPersistsThroughPostgreSQL(t *testing.T) {
 	}
 
 	_, err = client.CreateProduct(ctx, &catalogv1.CreateProductRequest{
-		Name:            "Invalid product",
 		PriceMinorUnits: 12_999,
 		Currency:        "BRL",
 	})
 	if status.Code(err) != codes.InvalidArgument {
 		t.Fatalf("status.Code(error) = %s, want %s; error = %v", status.Code(err), codes.InvalidArgument, err)
 	}
-	var invalidRows int
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM products WHERE name = $1", "Invalid product").Scan(&invalidRows); err != nil {
-		t.Fatalf("count invalid products error = %v", err)
+	var totalRows int
+	if err := pool.QueryRow(ctx, "SELECT count(*) FROM products").Scan(&totalRows); err != nil {
+		t.Fatalf("count products error = %v", err)
 	}
-	if invalidRows != 0 {
-		t.Errorf("invalid persisted rows = %d, want 0", invalidRows)
+	if totalRows != 1 {
+		t.Errorf("total persisted rows = %d, want 1 (only the valid create should persist)", totalRows)
 	}
 }
 
@@ -132,8 +131,7 @@ func TestCatalogServerGetProductPersistsThroughPostgreSQL(t *testing.T) {
 	t.Cleanup(func() { _ = connection.Close() })
 	client := catalogv1.NewCatalogServiceClient(connection)
 
-	_, err = client.CreateProduct(ctx, &catalogv1.CreateProductRequest{
-		Id:              "product-123",
+	createResponse, err := client.CreateProduct(ctx, &catalogv1.CreateProductRequest{
 		Name:            "Keyboard",
 		Description:     "Mechanical keyboard",
 		PriceMinorUnits: 12_999,
@@ -142,8 +140,9 @@ func TestCatalogServerGetProductPersistsThroughPostgreSQL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateProduct() error = %v", err)
 	}
+	createdID := createResponse.GetProduct().GetId()
 
-	response, err := client.GetProduct(ctx, &catalogv1.GetProductRequest{Id: "product-123"})
+	response, err := client.GetProduct(ctx, &catalogv1.GetProductRequest{Id: createdID})
 	if err != nil {
 		t.Fatalf("GetProduct() error = %v", err)
 	}
@@ -151,7 +150,7 @@ func TestCatalogServerGetProductPersistsThroughPostgreSQL(t *testing.T) {
 		t.Errorf("product name = %q, want %q", response.GetProduct().GetName(), "Keyboard")
 	}
 
-	_, err = client.GetProduct(ctx, &catalogv1.GetProductRequest{Id: "missing-product"})
+	_, err = client.GetProduct(ctx, &catalogv1.GetProductRequest{Id: 999_999_999})
 	if status.Code(err) != codes.NotFound {
 		t.Fatalf("status.Code(error) = %s, want %s; error = %v", status.Code(err), codes.NotFound, err)
 	}

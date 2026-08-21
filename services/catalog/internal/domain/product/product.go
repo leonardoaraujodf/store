@@ -2,23 +2,19 @@ package product
 
 import "errors"
 
-var ErrEmptyID = errors.New("product id cannot be empty")
 var ErrEmptyName = errors.New("product name cannot be empty")
 var ErrNegativePrice = errors.New("product price cannot be negative")
 var ErrInvalidCurrency = errors.New("invalid currency name")
 
 type Product struct {
-	ID              string
+	ID              int64
 	Name            string
 	Description     string
 	PriceMinorUnits int64
 	Currency        string
 }
 
-func New(id string, name string, description string, priceMinorUnits int64, currency string) (Product, error) {
-	if id == "" {
-		return Product{}, ErrEmptyID
-	}
+func New(name string, description string, priceMinorUnits int64, currency string) (Product, error) {
 	if name == "" {
 		return Product{}, ErrEmptyName
 	}
@@ -37,7 +33,6 @@ func New(id string, name string, description string, priceMinorUnits int64, curr
 	}
 
 	return Product{
-		ID:              id,
 		Name:            name,
 		Description:     description,
 		PriceMinorUnits: priceMinorUnits,

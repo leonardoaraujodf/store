@@ -10,19 +10,20 @@ import (
 )
 
 type fakeRepository struct {
-	products map[string]product.Product
+	products map[int64]product.Product
 	findErr  error
 }
 
-func (f *fakeRepository) Save(_ context.Context, p product.Product) error {
+func (f *fakeRepository) Save(_ context.Context, p product.Product) (product.Product, error) {
 	if f.products == nil {
-		f.products = map[string]product.Product{}
+		f.products = map[int64]product.Product{}
 	}
+	p.ID = int64(len(f.products)) + 1
 	f.products[p.ID] = p
-	return nil
+	return p, nil
 }
 
-func (f *fakeRepository) FindByID(_ context.Context, id string) (product.Product, bool, error) {
+func (f *fakeRepository) FindByID(_ context.Context, id int64) (product.Product, bool, error) {
 	if f.findErr != nil {
 		return product.Product{}, false, f.findErr
 	}
@@ -34,16 +35,17 @@ func TestUseCaseExecuteReturnsExistingProduct(t *testing.T) {
 	t.Parallel()
 
 	repository := &fakeRepository{}
-	want, err := product.New("product-123", "Keyboard", "Mechanical Keyboard", 12_999, "BRL")
+	p, err := product.New("Keyboard", "Mechanical Keyboard", 12_999, "BRL")
 	if err != nil {
 		t.Fatalf("product.New() error = %v", err)
 	}
-	if err := repository.Save(context.Background(), want); err != nil {
+	want, err := repository.Save(context.Background(), p)
+	if err != nil {
 		t.Fatalf("repository.Save() error = %v", err)
 	}
 
 	useCase := getproduct.New(repository)
-	got, err := useCase.Execute(context.Background(), getproduct.Command{ID: "product-123"})
+	got, err := useCase.Execute(context.Background(), getproduct.Command{ID: want.ID})
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
@@ -52,13 +54,27 @@ func TestUseCaseExecuteReturnsExistingProduct(t *testing.T) {
 	}
 }
 
-func TestUseCaseExecuteReturnsErrEmptyIDForEmptyID(t *testing.T) {
+func TestUseCaseExecuteReturnsErrInvalidIDForNonPositiveID(t *testing.T) {
 	t.Parallel()
 
-	useCase := getproduct.New(&fakeRepository{})
-	_, err := useCase.Execute(context.Background(), getproduct.Command{ID: ""})
-	if !errors.Is(err, product.ErrEmptyID) {
-		t.Fatalf("Execute() error = %v, want %v", err, product.ErrEmptyID)
+	tests := []struct {
+		name string
+		id   int64
+	}{
+		{name: "zero", id: 0},
+		{name: "negative", id: -1},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			useCase := getproduct.New(&fakeRepository{})
+			_, err := useCase.Execute(context.Background(), getproduct.Command{ID: tt.id})
+			if !errors.Is(err, getproduct.ErrInvalidID) {
+				t.Fatalf("Execute() error = %v, want %v", err, getproduct.ErrInvalidID)
+			}
+		})
 	}
 }
 
@@ -66,7 +82,7 @@ func TestUseCaseExecuteReturnsErrProductNotFoundForMissingProduct(t *testing.T) 
 	t.Parallel()
 
 	useCase := getproduct.New(&fakeRepository{})
-	_, err := useCase.Execute(context.Background(), getproduct.Command{ID: "missing-product"})
+	_, err := useCase.Execute(context.Background(), getproduct.Command{ID: 999_999_999})
 	if !errors.Is(err, getproduct.ErrProductNotFound) {
 		t.Fatalf("Execute() error = %v, want %v", err, getproduct.ErrProductNotFound)
 	}
@@ -77,7 +93,7 @@ func TestUseCaseExecuteReturnsRepositoryError(t *testing.T) {
 
 	wantErr := errors.New("repository unavailable")
 	useCase := getproduct.New(&fakeRepository{findErr: wantErr})
-	_, err := useCase.Execute(context.Background(), getproduct.Command{ID: "product-123"})
+	_, err := useCase.Execute(context.Background(), getproduct.Command{ID: 1})
 	if !errors.Is(err, wantErr) {
 		t.Fatalf("Execute() error = %v, want %v", err, wantErr)
 	}

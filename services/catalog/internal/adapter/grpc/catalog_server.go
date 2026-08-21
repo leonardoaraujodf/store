@@ -24,7 +24,6 @@ func NewCatalogServer(createUseCase createproduct.UseCase, getUseCase getproduct
 
 func (s *CatalogServer) CreateProduct(ctx context.Context, request *catalogv1.CreateProductRequest) (*catalogv1.CreateProductResponse, error) {
 	p, err := s.createUseCase.Execute(ctx, createproduct.Command{
-		ID:              request.GetId(),
 		Name:            request.GetName(),
 		Description:     request.GetDescription(),
 		PriceMinorUnits: request.GetPriceMinorUnits(),
@@ -44,7 +43,7 @@ func (s *CatalogServer) CreateProduct(ctx context.Context, request *catalogv1.Cr
 func (s *CatalogServer) GetProduct(ctx context.Context, request *catalogv1.GetProductRequest) (*catalogv1.GetProductResponse, error) {
 	p, err := s.getUseCase.Execute(ctx, getproduct.Command{ID: request.GetId()})
 	if err != nil {
-		if errors.Is(err, product.ErrEmptyID) {
+		if errors.Is(err, getproduct.ErrInvalidID) {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 		if errors.Is(err, getproduct.ErrProductNotFound) {
@@ -68,8 +67,7 @@ func toProto(p product.Product) *catalogv1.Product {
 }
 
 func isProductValidationError(err error) bool {
-	return errors.Is(err, product.ErrEmptyID) ||
-		errors.Is(err, product.ErrEmptyName) ||
+	return errors.Is(err, product.ErrEmptyName) ||
 		errors.Is(err, product.ErrNegativePrice) ||
 		errors.Is(err, product.ErrInvalidCurrency)
 }
